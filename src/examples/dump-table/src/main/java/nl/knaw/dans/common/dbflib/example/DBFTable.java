@@ -17,7 +17,10 @@ package nl.knaw.dans.common.dbflib.example;
 
 
 import nl.knaw.dans.common.dbflib.*;
-import nl.knaw.dans.common.dbflib.example.utils.UnitTestUtil;
+import nl.knaw.dans.common.dbflib.example.contants.ZDContants;
+import nl.knaw.dans.common.dbflib.example.vo.CurrentDateTimeVO;
+import nl.knaw.dans.common.dbflib.example.vo.SFXXHCDTO;
+import nl.knaw.dans.common.dbflib.example.vo.ZQZHCXDTO;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,28 +35,194 @@ import java.util.*;
 public class DBFTable {
     public static void main(String[] args) throws IOException, CorruptedTableException, InvalidFieldLengthException, InvalidFieldTypeException, InterruptedException {
         String temp = "C:/liuxiongfeng/中登软件/testdbf/0U071906287500000076.dbf";//模板文件
-        String prePath = "C:/liuxiongfeng/中登软件/testdbf/";
-        String createFileName = "7500000103";
-        createNewDbfFile(prePath,createFileName);
-        write(prePath,createFileName);
-        /*Thread.currentThread().sleep(3000);
-        getZDQueryResult(prePath,createFileName);*/
+        //String prePath = "C:/liuxiongfeng/中登软件/testdbf/";
+        String prePath = "z:/zt/";
+        String createTableName = "7500000124";
+        /*ZQZHCXDTO ZQZHCXDTO = new ZQZHCXDTO(createTableName,"孙淑范","01","230703281220012","",
+                "", "","100087", "1000871653","");
+        createZQZHCXDbfFile(prePath,createTableName, ZQZHCXDTO);
+        addReqRecord(prePath,createTableName,"07","1100004709980867");
+        getZDQueryResult(prePath,createTableName);*/
+        SFXXHCDTO sfxxhcdto = new SFXXHCDTO(createTableName,"01","01","230703281220012",
+                "孙淑范","100087","1000871653","");
+        createSFXXHCDbfFile(prePath,createTableName, sfxxhcdto);
+        addReqRecord(prePath,createTableName,"01","1100004709980868");
+        getZDQueryResult(prePath,createTableName);
+
     }
 
-    //写从文件和主文件
-    public static void write(String prePath,String createFileName) {
-        if (prePath == null || "".equals(prePath)) {
-            System.exit(1);
+    //第一步 ： 创建<证券账户查询>请求子文件 success  不足部分是否要补充空格
+    public static String createZQZHCXDbfFile(String prePath, String createTableName, ZQZHCXDTO zqzhcxdto) throws InvalidFieldLengthException, InvalidFieldTypeException, IOException, CorruptedTableException {
+
+        if (!notNullAndEmpty(prePath)){
+            return "prePath不能为空";
         }
-        //选中dbf主文件
+        if (!notNullAndEmpty(createTableName)){
+            return "createTableName不能为空";
+        }
+        if (!notNullAndEmpty(zqzhcxdto.getYwlsh())){
+            return "ywlsh不能为空";
+        }
+        if (!notNullAndEmpty(zqzhcxdto.getKhjgdm())){
+            return "khjgdm不能为空";
+        }
+        if (!notNullAndEmpty(zqzhcxdto.getKhwddm())){
+            return "khwddm不能为空";
+        }
+        //定义dbf文件字段
+        List<Field> fields = new ArrayList<Field>();
+        fields.add(new Field("YWLSH", Type.CHARACTER, 10));
+        fields.add(new Field("KHMC", Type.CHARACTER, 120));
+        fields.add(new Field("ZJLB",Type.CHARACTER,2));
+        fields.add(new Field("ZJDM", Type.CHARACTER,40));
+        fields.add(new Field("YMTH", Type.CHARACTER,20));
+        fields.add(new Field("ZHLB", Type.CHARACTER,2));
+        fields.add(new Field("ZQZH", Type.CHARACTER,20));
+        fields.add(new Field("KHJGDM", Type.CHARACTER,6));
+        fields.add(new Field("KHWDDM", Type.CHARACTER,10));
+        fields.add(new Field("SQRQ", Type.CHARACTER,8));
+        File newFile = new File(prePath, createTableName + ".dbf");
+        Table newTable = null;
+        try {
+            //创建dbf表
+            newTable = new Table(newFile, Version.DBASE_5, fields,"GBK");
+            newTable.open(IfNonExistent.CREATE);
+            //拼接入参
+            String formatDate = ""; //当前时间
+            if (notNullAndEmpty(zqzhcxdto.getSqrq())) {
+                formatDate = zqzhcxdto.getSqrq();
+            } else {
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("YYYYMMdd");
+                formatDate = simpleDateFormat.format(new Date());
+            }
+            /*newTable.addRecord(createTableName,"孙淑范","01","230703281220012","",
+                    "", "","100087", "1000871653","20190702");*/
+            newTable.addRecord(getColumnValue(zqzhcxdto.getYwlsh()),getColumnValue(zqzhcxdto.getKhmc()),
+                    getColumnValue(zqzhcxdto.getZjlb()),getColumnValue(zqzhcxdto.getZjdm()),
+                    getColumnValue(zqzhcxdto.getYmth()),getColumnValue(zqzhcxdto.getZhlb()),
+                    getColumnValue(zqzhcxdto.getZqzh()),getColumnValue(zqzhcxdto.getKhjgdm()),
+                    getColumnValue(zqzhcxdto.getKhwddm()),formatDate);
+            System.out.println("入参为：("+ getColumnValue(zqzhcxdto.getYwlsh())+","+getColumnValue(zqzhcxdto.getKhmc())+","+
+                    getColumnValue(zqzhcxdto.getZjlb())+","+getColumnValue(zqzhcxdto.getZjdm())+","+
+                    getColumnValue(zqzhcxdto.getYmth())+","+getColumnValue(zqzhcxdto.getZhlb())+","+
+                    getColumnValue(zqzhcxdto.getZqzh())+","+getColumnValue(zqzhcxdto.getKhjgdm())+","+
+                    getColumnValue(zqzhcxdto.getKhwddm())+","+formatDate + ")");
+            System.out.println("#####创建请求<证券账户查询>子文件成功####");
+        } catch (CorruptedTableException e) {
+            e.printStackTrace();
+        } catch (DbfLibException e) {
+
+        } finally {
+            newTable.close();
+        }
+        return null;
+    }
+    //第一步 ： 创建<身份信息核查>请求子文件 success  不足部分是否要补充空格
+    public static String createSFXXHCDbfFile(String prePath, String createTableName, SFXXHCDTO sfxxhcdto) throws InvalidFieldLengthException, InvalidFieldTypeException, IOException, CorruptedTableException {
+
+        if (!notNullAndEmpty(prePath)){
+            return "prePath不能为空";
+        }
+        if (!notNullAndEmpty(createTableName)){
+            return "createTableName不能为空";
+        }
+        if (!notNullAndEmpty(sfxxhcdto.getYwlsh())){
+            return "ywlsh不能为空";
+        }
+        if (!notNullAndEmpty(sfxxhcdto.getYwlb())){
+            return "ywlb不能为空";
+        }
+        if (!notNullAndEmpty(sfxxhcdto.getZjdm())){
+            return "zjlb不能为空";
+        }
+        if (!notNullAndEmpty(sfxxhcdto.getZjdm())){
+            return "zjdm不能为空";
+        }
+        if (!notNullAndEmpty(sfxxhcdto.getKhmc())){
+            return "khmc不能为空";
+        }
+        if (!notNullAndEmpty(sfxxhcdto.getKhjgdm())){
+            return "khjgdm不能为空";
+        }
+        if (!notNullAndEmpty(sfxxhcdto.getKhwddm())){
+            return "khwddm不能为空";
+        }
+        //定义dbf文件字段
+        List<Field> fields = new ArrayList<Field>();
+        fields.add(new Field("YWLSH", Type.CHARACTER, 10));
+        fields.add(new Field("YWLB", Type.CHARACTER, 2));
+        fields.add(new Field("ZJLB",Type.CHARACTER,2));
+        fields.add(new Field("ZJDM", Type.CHARACTER,40));
+        fields.add(new Field("KHMC", Type.CHARACTER, 120));
+        fields.add(new Field("KHJGDM", Type.CHARACTER,6));
+        fields.add(new Field("KHWDDM", Type.CHARACTER,10));
+        fields.add(new Field("SQRQ", Type.CHARACTER,8));
+        File newFile = new File(prePath, createTableName + ".dbf");
+        Table newTable = null;
+        try {
+            //创建dbf表
+            newTable = new Table(newFile, Version.DBASE_5, fields,"GBK");
+            newTable.open(IfNonExistent.CREATE);
+            /*newTable.addRecord(createTableName,"孙淑范","01","230703281220012","",
+                    "", "","100087", "1000871653","20190702");*/
+            newTable.addRecord(getColumnValue(sfxxhcdto.getYwlsh()),getColumnValue(sfxxhcdto.getYwlb()),
+                    getColumnValue(sfxxhcdto.getZjlb()),getColumnValue(sfxxhcdto.getZjdm()),
+                    getColumnValue(sfxxhcdto.getKhmc()),getColumnValue(sfxxhcdto.getKhjgdm()),
+                    getColumnValue(sfxxhcdto.getKhwddm()),getDateTime().getYmd());
+            System.out.println("入参为：("+ getColumnValue(sfxxhcdto.getYwlsh())+","+getColumnValue(sfxxhcdto.getYwlb())+","+
+                    getColumnValue(sfxxhcdto.getZjlb())+","+getColumnValue(sfxxhcdto.getZjdm())+","+
+                    getColumnValue(sfxxhcdto.getKhmc())+","+getColumnValue(sfxxhcdto.getKhjgdm())+","+
+                    getColumnValue(sfxxhcdto.getKhwddm())+","+getDateTime().getYmd() + ")");
+            System.out.println("#####创建请求<身份信息核查>子文件成功####");
+        } catch (CorruptedTableException e) {
+            e.printStackTrace();
+        } catch (DbfLibException e) {
+
+        } finally {
+            newTable.close();
+        }
+        return null;
+    }
+
+    //第二步： 创建请求主文件
+    public static String  addReqRecord(String prePath,String createTableName,String functionType,String jylsh) {
+        if (!notNullAndEmpty(prePath)) {
+            return "prePath不能为空";
+        }
+        if (!notNullAndEmpty(createTableName)) {
+            return "createTableName不能为空";
+        }
+        if (!notNullAndEmpty(functionType)) {
+            return "functionType不能为空";
+        }
+        //选中dbf主文件:默认主文件的位置是prePath目录下面的req.dbf文件
         Table table = new Table(new File(prePath + "req.dbf"));
         try {
             table.open(IfNonExistent.ERROR);
-            table.addRecord(createFileName, "CSDCC", "UAPSRV", "07", "1", createFileName + ".dbf", "",
-                    "20190702", "110616", "", "0", "1100004709980867", "", "####");
+            //将子文件和该接口类型参数添加到请求主文件
+            String serviceDomain = "";
+            String serviceName = "";
+            String serviceType = "";
+            if (ZDContants.ZQZHCX_SERVICE_TYPE.equals(functionType)){
+                serviceDomain = ZDContants.ZQZHCX_SERVICE_DOMAIN;
+                serviceName = ZDContants.ZQZHCX_SERVICE_NAME;
+                serviceType = ZDContants.ZQZHCX_SERVICE_TYPE;
+            }else if (ZDContants.SFXXHC_SERVICE_TYPE.equals(functionType)){
+                serviceDomain = ZDContants.SFXXHC_SERVICE_DOMAIN;
+                serviceName = ZDContants.SFXXHC_SERVICE_NAME;
+                serviceType = ZDContants.SFXXHC_SERVICE_TYPE;
+            }
+            //当前时间
+            table.addRecord(createTableName, serviceDomain, serviceName, serviceType,
+                    "1", createTableName + ".dbf", "", getDateTime().getYmd(), getDateTime().getHms(),
+                    "", "0", jylsh, "", "####");
            /* table.addRecord(createFileName.substring(createFileName.length() -10 ,createFileName.length()), "CSDCC", "UAPSRV", "07", "1", createFileName + ".dbf", "",
                     "20190702", "110616", "", "0", "1100004709980867", "", "####");*/
-            System.out.println("-------写入qingqiu zhuwenjian 成功-------");
+            System.out.println("请求主文件入参为：("+ createTableName + "," + serviceDomain + "," +serviceName+ "," +
+                            serviceType+ "," + "1"+ "," + createTableName + ".dbf"+ "," + "" + "," +
+                            getDateTime().getYmd()+ "," + getDateTime().getHms()+ "," +
+                    ""+ "," + "0"+ "," + jylsh+ "," + ""+ "," + "####)");
+            System.out.println("-------写入请求主文件成功-------");
         } catch (IOException ioe) {
             System.out.println("Trouble reading table or table not found");
             ioe.printStackTrace();
@@ -67,6 +236,73 @@ public class DBFTable {
                 System.out.println("Unable to close the table");
             }
         }
+        return null;
+    }
+
+    //第三步 ： 获取中登查询结果
+    public static List<Map<String,String>> getZDQueryResult(String prePath, String sbbh) throws IOException, CorruptedTableException, InterruptedException {
+        System.out.println("开始执行获取中登查询结果");
+        List<Map<String,String>> list = new ArrayList<Map<String, String>>();
+        Map<String, String> zd = new HashMap<String, String>();
+        if (prePath == null || sbbh == null) {
+            System.exit(1);
+        }
+        File file = new File(prePath + "rep.dbf");
+        final Table table = new Table(file);
+        try {
+            table.open(IfNonExistent.ERROR);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (CorruptedTableException e) {
+            e.printStackTrace();
+        }
+        //遍历表中记录
+        final Iterator<Record> recordIterator = table.recordIterator();
+        while (recordIterator.hasNext()) {
+            final Record record = recordIterator.next();
+            //qu dangqian zhetiao jilu de sbbh
+            String sbbhValue = record.getStringValue("SBBH");
+            try {
+                //获取到sbbh进行比较，是否是对应的结果
+                if (sbbhValue.equals(sbbh)) {
+                    String zwjm = record.getStringValue("ZWJM");
+                    if (zwjm == null || "".equals(zwjm.trim())){
+                        for (Field field : table.getFields()){
+                            if (field.getName().trim().equals("CLSM")){
+                                byte[] rawValue = record.getRawValue(field);
+                                String clsm = rawValue == null ? "<NULL>" : new String(rawValue,"GBK");
+                                zd.put("结果：",clsm);
+                                list.add(zd);
+                                System.out.println("结果是：" + clsm);
+                            }
+                        }
+                        return list;
+                    }else {
+                        File sonFile = new File(prePath + zwjm);
+                        //设置查询延时：当文件不存在等待2秒
+                        while (!sonFile.exists()){
+                            Thread.currentThread().sleep(2000);
+                            System.out.println("等待两秒");
+                        }
+                        //关闭响应主文件
+                        try {
+                            table.close();
+                        } catch (IOException ex) {
+                            System.out.println("Unable to close the table");
+                        }
+                        System.out.println("开始获取中登响应子文件内容");
+                        return iterateTableData(prePath + zwjm);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (CorruptedTableException e) {
+                e.printStackTrace();
+            } catch (DbfLibException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     //输出表字段信息
@@ -108,7 +344,8 @@ public class DBFTable {
     }
 
     //遍历表中记录
-    public static Map<String, String> iterateTableData(String pathAndFile) throws IOException, CorruptedTableException {
+    public static List<Map<String, String>> iterateTableData(String pathAndFile) throws IOException, CorruptedTableException {
+        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
         Map<String, String> map = new HashMap<String, String>();
         if (pathAndFile == null) {
             System.exit(1);
@@ -122,6 +359,7 @@ public class DBFTable {
 
         while (recordIterator.hasNext()) {
             final Record record = recordIterator.next();
+            System.out.println();
             System.out.println(count++);
 
             for (final Field field : fields) {
@@ -139,121 +377,44 @@ public class DBFTable {
                     e.printStackTrace();
                 }
             }
+            list.add(map);
         }
-        return map;
-    }
-    //获取中登查询结果
-    public static Map<String,String> getZDQueryResult(String prePath, String sbbh) throws IOException, CorruptedTableException {
-        Map<String, String> zd = new HashMap<String, String>();
-        if (prePath == null || sbbh == null) {
-            System.exit(1);
+        //关闭响应子文件
+        try {
+            table.close();
+        } catch (IOException ex) {
+            System.out.println("Unable to close the table");
         }
-        final Table table = new Table(new File(prePath + "rep.dbf"));
-        table.open(IfNonExistent.ERROR);
-        //遍历表中记录
-        final Iterator<Record> recordIterator = table.recordIterator();
-        while (recordIterator.hasNext()) {
-            final Record record = recordIterator.next();
-            //qu dangqian zhetiao jilu de sbbh
-            String sbbhValue = record.getStringValue("SBBH");
-            try {
-                //获取到sbbh进行比较，是否是对应的结果
-                if (sbbhValue.equals(sbbh)) {
-                    String zwjm = record.getStringValue("ZWJM");
-                    if (zwjm == null || "".equals(zwjm.trim())){
-                        for (Field field : table.getFields()){
-                            if (field.getName().trim().equals("CLSM")){
-                                byte[] rawValue = record.getRawValue(field);
-                                String clsm = rawValue == null ? "<NULL>" : new String(rawValue,"GBK");
-                                zd.put("结果：",clsm);
-                                System.out.println("结果是：" + clsm);
-                            }
-                        }
-                        return zd;
-                    }else {
-                        zd = iterateTableData(prePath + zwjm);
-                        return zd;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (CorruptedTableException e) {
-                e.printStackTrace();
-            } catch (DbfLibException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
+        return list;
     }
 
-    public static void createNewDbfFile(String prePth,String createTableName) throws InvalidFieldLengthException, InvalidFieldTypeException, IOException, CorruptedTableException {
-        List<Field> fields = new ArrayList<Field>();
-        fields.add(new Field("YWLSH", Type.CHARACTER, 10));
-        fields.add(new Field("KHMC", Type.CHARACTER, 120));
-        fields.add(new Field("ZJLB",Type.CHARACTER,2));
-        fields.add(new Field("ZJDM", Type.CHARACTER,40));
-        fields.add(new Field("YMTH", Type.CHARACTER,20));
-        fields.add(new Field("ZHLB", Type.CHARACTER,2));
-        fields.add(new Field("ZQZH", Type.CHARACTER,20));
-        fields.add(new Field("KHJGDM", Type.CHARACTER,6));
-        fields.add(new Field("KHWDDM", Type.CHARACTER,10));
-        fields.add(new Field("SQRQ", Type.CHARACTER,8));
-        File newFile = new File(prePth, createTableName + ".dbf");
-        Table newTable = null;
-        try {
-            newTable = new Table(newFile, Version.DBASE_5, fields,"GBK");
-            newTable.open(IfNonExistent.CREATE);
-            newTable.addRecord(createTableName,"孙淑范","01","230703281220012","",
-                    "", "","100087", "1000871653","20190702");
-            System.out.println("chuangjian qingqiu ziwenjian chenggong");
-        } catch (CorruptedTableException e) {
-            e.printStackTrace();
-        } catch (DbfLibException e) {
+    //判是否是null或者“”；有值为true；无值为false
+    public static boolean notNullAndEmpty(String str){
+        if (null != str && !"".equals(str)){
+            return true;
+        }else {
+            return false;
+        }
+    }
 
-        } finally {
-            newTable.close();
+    //判断字段是否有值，无值赋值为""；
+    public static String getColumnValue(String value) {
+        if (notNullAndEmpty(value)){
+            return value;
+        }else {
+            return "";
         }
     }
-    //创建一个dbf文件 prePath为创建的文件所在的文件夹路径;返回新文件的路径
-    //创建的dbf文件要确定下是否为空的
-    public static String createCopyDbfFile(String demoFile, String prePath, String createFileName, Version version) throws IOException {
-        if (prePath == null || "".equals(prePath)) {
-            System.exit(2);
-        }
-        //readAndIterator(pathAndDemoDbf);
-        try {
-            //dbf文件不存在则新建一个
-            //table.open(IfNonExistent.CREATE);
-            // ... do your stuff 新建一个然后呢？怎么定义字段--复制字段
-            String newFile = UnitTestUtil.doCopy(demoFile, prePath, createFileName, version);
-            //选中dbf主文件
-            Table table = new Table(new File(newFile));
-            try {
-                table.open(IfNonExistent.ERROR);
-                table.addRecord(createFileName.substring(createFileName.length()-10,createFileName.length()), "", "", "", "", "11", "A201905051",
-                        "100087", "1000871654", "20190701");
-                System.out.println("-------写请求子文件成功-------");
-            } catch (IOException ioe) {
-                System.out.println("Trouble reading table or table not found");
-                ioe.printStackTrace();
-            } catch (DbfLibException dbflibException) {
-                System.out.println("Problem getting raw value");
-                dbflibException.printStackTrace();
-            } finally {
-                try {
-                    table.close();
-                } catch (IOException ex) {
-                    System.out.println("Unable to close the table");
-                }
-            }
-            return newFile;
-        } catch (CorruptedTableException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (DbfLibException e) {
-            e.printStackTrace();
-        }
-        return null;
+    //当前时间
+    public static CurrentDateTimeVO getDateTime() {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("YYYYMMdd HHmmss");
+        String formatDate = simpleDateFormat.format(new Date());
+        String date = formatDate.split(" ")[0];
+        String time = formatDate.split(" ")[1];
+        CurrentDateTimeVO currentDateTimeVO = new CurrentDateTimeVO();
+        currentDateTimeVO.setYmd(date);
+        currentDateTimeVO.setHms(time);
+        return currentDateTimeVO;
     }
+
 }
