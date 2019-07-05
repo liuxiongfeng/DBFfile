@@ -15,8 +15,10 @@ public class SFXXHCDTO {
     private String khjgdm;
     private String khwddm;
     private String sqrq;
+    private String fjmc;
+    private String fjcd;
 
-    public SFXXHCDTO(String ywlsh, String ywlb, String zjlb, String zjdm, String khmc, String khjgdm, String khwddm, String sqrq) {
+    public SFXXHCDTO(String ywlsh, String ywlb, String zjlb, String zjdm, String khmc, String khjgdm, String khwddm, String sqrq, String fjmc, String fjcd) {
         this.ywlsh = ywlsh;
         this.ywlb = ywlb;
         this.zjlb = zjlb;
@@ -25,6 +27,8 @@ public class SFXXHCDTO {
         this.khjgdm = khjgdm;
         this.khwddm = khwddm;
         this.sqrq = sqrq;
+        this.fjmc = fjmc;
+        this.fjcd = fjcd;
     }
 
     public String getYwlsh() {
@@ -89,5 +93,21 @@ public class SFXXHCDTO {
 
     public void setSqrq(String sqrq) {
         this.sqrq = sqrq;
+    }
+
+    public String getFjmc() {
+        return fjmc;
+    }
+
+    public void setFjmc(String fjmc) {
+        this.fjmc = fjmc;
+    }
+
+    public String getFjcd() {
+        return fjcd;
+    }
+
+    public void setFjcd(String fjcd) {
+        this.fjcd = fjcd;
     }
 }
