@@ -21,6 +21,7 @@ import nl.knaw.dans.common.dbflib.example.contants.ZDContants;
 import nl.knaw.dans.common.dbflib.example.vo.CurrentDateTimeVO;
 import nl.knaw.dans.common.dbflib.example.vo.SFXXHCDTO;
 import nl.knaw.dans.common.dbflib.example.vo.ZQZHCXDTO;
+import sun.misc.BASE64Encoder;
 
 import java.io.*;
 import java.text.Format;
@@ -34,6 +35,7 @@ public class DBFTable {
     public static void main(String[] args) throws IOException, CorruptedTableException, InvalidFieldLengthException, InvalidFieldTypeException, InterruptedException {
         String prePath = "C:/liuxiongfeng/对接中登/testdbf/";
         //String prePath = "z:/zt/";
+
         String createTableName = "7500000142";
         /*ZQZHCXDTO ZQZHCXDTO = new ZQZHCXDTO(createTableName,"孙淑范","01","230703281220012","",
                 "", "","100087", "1000871653","");
@@ -46,9 +48,11 @@ public class DBFTable {
         createSFXXHCDbfFile(prePath,createTableName, sfxxhcdto);
         addReqRecord(prePath,createTableName,"01","1100004709980868");*/
         //getZDQueryResult(prePath,createTableName);
-        jpgToTxt(prePath + "201907050000000041.jpg");
+        //jpgToTxt(prePath + "201907050000000041.jpg");
         //txtToJpg(prePath + "201907050000000041.txt");
-        readTxtFile(prePath + "201907050000000041.txt");
+        String base64 = readTxtFile(prePath + "201907050000000041.txt");
+        //给base64拼接上文件头
+        String imgBase64 = "data:image/" + "jpg" + ";base64," + base64;
 
     }
 
@@ -505,5 +509,26 @@ public class DBFTable {
         System.out.println(result.toString());
         return result == null ? null : result.toString();
     }
+
+    //将文件转成base64
+    public static String encodeBase64File(String path) throws Exception {
+        File file = new File(path);
+        FileInputStream inputFile = new FileInputStream(file);
+        byte[] buffer = new byte[(int)file.length()];
+        inputFile.read(buffer);
+        inputFile.close();
+        return new BASE64Encoder().encode(buffer);
+    }
+    //获取文件的扩展名
+    public static String getExtensionName(String filename) {
+        if ((filename != null) && (filename.length() > 0)) {
+            int dot = filename.lastIndexOf('.');
+            if ((dot > -1) && (dot < (filename.length() - 1))) {
+                return filename.substring(dot + 1);
+            }
+        }
+        return filename;
+    }
+
 
 }
